@@ -54,7 +54,7 @@ ENDIF ($(USE.PROJECT)_FOUND)
 ########################################################################
 # $(PROJECT.PREFIX) dependency
 ########################################################################
-find_package($(project.prefix) REQUIRED)
+find_package($(project.prefix:c) REQUIRED)
 IF ($(PROJECT.PREFIX)_FOUND)
     include_directories(${$(project.prefix)_INCLUDE_DIRS})
     list(APPEND MORE_LIBRARIES ${$(project.prefix)_LIBRARIES})
@@ -83,29 +83,29 @@ $(project.GENERATED_WARNING_HEADER:)
 
 if (NOT MSVC)
     include(FindPkgConfig)
-    pkg_check_modules(PC_$(PROJECT.NAME) "$(project.libname)")
-    if (NOT PC_$(PROJECT.NAME)_FOUND)
-        pkg_check_modules(PC_$(PROJECT.NAME) "$(project.libname)")
-    endif (NOT PC_$(PROJECT.NAME)_FOUND)
-    if (PC_$(PROJECT.NAME)_FOUND)
+    pkg_check_modules(PC_$(PROJECT.NAME:c) "$(project.libname)")
+    if (NOT PC_$(PROJECT.NAME:c)_FOUND)
+        pkg_check_modules(PC_$(PROJECT.NAME:c) "$(project.libname)")
+    endif (NOT PC_$(PROJECT.NAME:c)_FOUND)
+    if (PC_$(PROJECT.NAME:c)_FOUND)
         # some libraries install the headers is a subdirectory of the include dir
         # returned by pkg-config, so use a wildcard match to improve chances of finding
         # headers and SOs.
-        set(PC_$(PROJECT.NAME)_INCLUDE_HINTS ${PC_$(PROJECT.NAME)_INCLUDE_DIRS} ${PC_$(PROJECT.NAME)_INCLUDE_DIRS}/*)
-        set(PC_$(PROJECT.NAME)_LIBRARY_HINTS ${PC_$(PROJECT.NAME)_LIBRARY_DIRS} ${PC_$(PROJECT.NAME)_LIBRARY_DIRS}/*)
-    endif(PC_$(PROJECT.NAME)_FOUND)
+        set(PC_$(PROJECT.NAME:c)_INCLUDE_HINTS ${PC_$(PROJECT.NAME:c)_INCLUDE_DIRS} ${PC_$(PROJECT.NAME:c)_INCLUDE_DIRS}/*)
+        set(PC_$(PROJECT.NAME:c)_LIBRARY_HINTS ${PC_$(PROJECT.NAME:c)_LIBRARY_DIRS} ${PC_$(PROJECT.NAME:c)_LIBRARY_DIRS}/*)
+    endif(PC_$(PROJECT.NAME:c)_FOUND)
 endif (NOT MSVC)
 
 find_path (
     ${CMAKE_FIND_PACKAGE_NAME}_INCLUDE_DIRS
     NAMES $(project.header)
-    HINTS ${PC_$(PROJECT.NAME)_INCLUDE_HINTS}
+    HINTS ${PC_$(PROJECT.NAME:c)_INCLUDE_HINTS}
 )
 
 find_library (
     ${CMAKE_FIND_PACKAGE_NAME}_LIBRARIES
     NAMES $(project.prefix)
-    HINTS ${PC_$(PROJECT.NAME)_LIBRARY_HINTS}
+    HINTS ${PC_$(PROJECT.NAME:c)_LIBRARY_HINTS}
 )
 
 include(FindPackageHandleStandardArgs)
@@ -994,7 +994,7 @@ cd ${$(PROJECT.PREFIX)_JNI_ROOT}
 [ -z "$TRAVIS_TAG" ] || IS_RELEASE="-PisRelease"
 
 TERM=dumb $CI_TIME ./gradlew build jar -PbuildPrefix=$BUILD_PREFIX $IS_RELEASE --info
-TERM=dumb $CI_TIME ./gradlew clean
+#TERM=dumb $CI_TIME ./gradlew clean
 
 ########################################################################
 #  Build and check the jni android binding

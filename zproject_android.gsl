@@ -103,6 +103,7 @@ case \$(uname | tr '[:upper:]' '[:lower:]') in
     ;;
 esac
 
+set -x
 # Set default values used in ci builds
 export NDK_VERSION=${NDK_VERSION:-android-ndk-r25}
 # With NDK r22b, the minimum SDK version range is [16, 31].
@@ -116,7 +117,8 @@ android_build_env
 android_build_opts
 
 # Use a temporary build directory
-cache="/tmp/android_build/${TOOLCHAIN_ARCH}"
+ANDROID_TMP_BUILD_DIR=${ANDROID_TMP_BUILD_DIR:-/tmp}
+cache="${ANDROID_TMP_BUILD_DIR}/android_build/${TOOLCHAIN_ARCH}"
 rm -rf "${cache}"
 mkdir -p "${cache}"
 
@@ -143,7 +145,7 @@ fi
 
     (bash ${$(USE.PROJECT)_ROOT}/builds/android/build.sh $BUILD_ARCH) || exit 1
     UPSTREAM_PREFIX=${$(USE.PROJECT)_ROOT}/builds/android/prefix/${TOOLCHAIN_ARCH}
-    cp -rn ${UPSTREAM_PREFIX}/* ${ANDROID_BUILD_PREFIX}
+    cp -rn ${UPSTREAM_PREFIX}/* "${ANDROID_BUILD_PREFIX}"
 }
 
 .endfor
@@ -155,19 +157,28 @@ fi
  "$(use.libname).so"\
 .endfor
  &> /dev/null) || {
-    rm -rf "${cache}/$(project.name)"
-    (cp -r ../.. "${cache}/$(project.name)" && cd "${cache}/$(project.name)" \\
-        && make clean && rm -f configure config.status)
+    rm -rf "${cache}/$(project.name:c)"
+    (
+        pwd \\
+        && cp -r ../.. "${cache}/$(project.name:c)" \\
+	&& cd "${cache}/$(project.name:c)" \\
+        && make clean \\
+	&& rm -f configure config.status \\
+    )
 
     # Remove *.la files as they might cause errors with cross compiled libraries
-    find ${ANDROID_BUILD_PREFIX} -name '*.la' -exec rm {} +
+    find "${ANDROID_BUILD_PREFIX}" -name '*.la' -exec rm {} +
 
     export LIBTOOL_EXTRA_LDFLAGS='-avoid-version'
 
-    (cd "${cache}/$(project.name)" && $CI_TIME ./autogen.sh 2> /dev/null \\
+    (
+        pwd \\
+        && cd "${cache}/$(project.name:c)" \\
+	&& $CI_TIME ./autogen.sh 2> /dev/null \\
         && $CI_TIME ./configure --quiet "${ANDROID_BUILD_OPTS[@]}" --without-docs \\
         && $CI_TIME make -j 4 \\
-        && $CI_TIME make install) || exit 1
+        && $CI_TIME make install \\
+    ) || exit 1
 }
 
 ##
