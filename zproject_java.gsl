@@ -1113,12 +1113,19 @@ mkdir -p /tmp/tmp-deps
 ######################
 #  Build native '$(use.libname).so'
 (
-.   if count(use.add_config_opts) > 0
-    # Custom additional options for $(use.project)
-.       for use.add_config_opts as add_cfgopt
-    CONFIG_OPTS+=("$(add_cfgopt)")
-.       endfor
+.   if "$(use.libname)" = "libcurl"
+    # Ugly hack for '$(use.project)', as it does not compile on ANDROID.
+    CONFIG_OPTS+=("--without-ssl")
+    CONFIG_OPTS+=("--without-libpsl")
 
+.   else
+.       if count(use.add_config_opts) > 0
+    # Custom additional options for $(use.project)
+.           for use.add_config_opts as add_cfgopt
+    CONFIG_OPTS+=("$(add_cfgopt)")
+.           endfor
+
+.       endif
 .   endif
     android_build_library "$(USE.PROJECT)" "${$(USE.PROJECT)_ROOT}"
 )
